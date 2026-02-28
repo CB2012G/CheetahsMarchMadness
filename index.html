@@ -827,7 +827,7 @@
 // CONFIG — update SCRIPT_URL to your published Apps Script
 // ════════════════════════════════════════════════════════
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzQnmprn31aGnamN1YWrv8WDOh3bQfnsGUU9EGucngbiL8FrHorScqCEPnl0Ncm5Ql8_w/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec",
   PAYMENT_EMAIL: "cherrybeachcheetahs@gmail.com",
   TEAM_NAME: "Cherry Beach Red Cheetahs"
 };
@@ -1084,14 +1084,14 @@ function clearDownstream(bn, region, round, game) {
   const keysToDelete = [];
   for (const k of Object.keys(bracketState[bn])) {
     if (k === 'champion') { keysToDelete.push(k); continue; }
-    // If we're picking within FF, only clear champion + the same FF game, not the other FF game
+    // If picking within FF, only clear champion — not the other FF game
     if (region === 'ff') continue;
     const m = k.match(/^(.+)-r(\d+)-g(\d+)$/);
     if (!m) continue;
     const [, kr, kround, kgame] = m;
     if (kr === region && parseInt(kround) > round) keysToDelete.push(k);
   }
-  // If we changed a regional Elite 8, clear FF + champion (regional picks affect FF seeds)
+  // If we changed a regional Elite 8, clear FF + champion
   if (region !== 'ff' && round >= 3) keysToDelete.push(...Object.keys(bracketState[bn]).filter(k=>k.startsWith('ff')||k==='champion'));
   keysToDelete.forEach(k => delete bracketState[bn][k]);
 }
@@ -1462,51 +1462,148 @@ function buildResultCard(entry) {
 function buildResultBracketHTML(entry) {
   const picks = entry.picks;
   const actual = gameResultsCache;
-  const rlbls = ['R64','R32','S16','E8'];
-  let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;min-width:700px;">';
 
-  for (const region of REGION_NAMES) {
-    html += `<div style="flex:1;min-width:150px;">
-      <div style="font-size:10px;font-weight:900;color:var(--cb-red);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;border-bottom:2px solid var(--cb-gray);padding-bottom:4px">${region}</div>`;
-    for (let r = 0; r <= 3; r++) {
-      html += `<div style="margin-bottom:6px"><div style="font-size:9px;color:#999;font-weight:700;letter-spacing:1px;margin-bottom:3px">${rlbls[r]}</div>`;
-      for (let g = 0; g < 8/Math.pow(2,r); g++) {
-        const k = `${region}-r${r}-g${g}`;
-        const pick = picks[k];
-        if (!pick) { html += `<div class="team-btn tbd" style="cursor:default;margin-bottom:2px"><span class="seed-badge">?</span><span class="team-name">—</span></div>`; continue; }
-        const res = actual[k];
-        let cls = '', icon = '';
-        if (res) { if (pick.winner.name===res) { cls='correct-pick'; icon='✓'; } else { cls='wrong-pick'; icon='✗'; } }
-        html += `<div class="team-btn ${cls}" style="cursor:default;margin-bottom:2px;"><span class="seed-badge">${pick.winner.seed}</span><span class="team-name">${pick.winner.name}</span>${icon?`<span class="result-icon">${icon}</span>`:''}</div>`;
-      }
-      html += '</div>';
+  const SLOT_H = 56;   // px height for one R64 game slot
+  const COL_W  = 128;  // px width of each round column
+
+  // Resolve the two participants entering a regional game
+  function getParticipants(region, round, game) {
+    if (round === 0) {
+      const a = teams[region][game * 2];
+      const b = teams[region][game * 2 + 1];
+      return [{ seed: a[0], name: a[1] }, { seed: b[0], name: b[1] }];
     }
-    html += '</div>';
+    const pa = picks[`${region}-r${round-1}-g${game*2}`];
+    const pb = picks[`${region}-r${round-1}-g${game*2+1}`];
+    return [pa ? pa.winner : null, pb ? pb.winner : null];
   }
 
-  // FF + Champion
-  html += `<div style="min-width:140px;">
-    <div style="font-size:10px;font-weight:900;color:var(--cb-red);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;border-bottom:2px solid var(--cb-gray);padding-bottom:4px">Final Four +</div>`;
-  for (let g = 0; g <= 1; g++) {
-    const k = `ff-r4-g${g}`;
-    const pick = picks[k];
-    if (!pick) { html += `<div class="team-btn tbd" style="cursor:default;margin-bottom:2px"><span class="seed-badge">?</span><span class="team-name">—</span></div>`; continue; }
-    const res = actual[k];
-    let cls='',icon='';
-    if(res){ if(pick.winner.name===res){cls='correct-pick';icon='✓';}else{cls='wrong-pick';icon='✗';} }
-    html += `<div class="team-btn ${cls}" style="cursor:default;margin-bottom:4px;"><span class="seed-badge">${pick.winner.seed}</span><span class="team-name">${pick.winner.name}</span>${icon?`<span class="result-icon">${icon}</span>`:''}</div>`;
+  // Resolve participants for a Final Four game
+  function getFFParticipants(gameIdx) {
+    const regionMap = [['East','South'],['West','Midwest']];
+    const [rA, rB] = regionMap[gameIdx];
+    const pa = picks[`${rA}-r3-g0`];
+    const pb = picks[`${rB}-r3-g0`];
+    return [pa ? pa.winner : null, pb ? pb.winner : null];
   }
-  const cp = picks['champion'];
-  if (cp) {
+
+  // Render a single team row
+  function teamRow(team, isPicked, gameKey) {
+    if (!team) return `<div style="display:flex;align-items:center;gap:3px;padding:2px 4px;border-radius:4px;border:1px solid #333;background:#1a1a1a;min-height:22px;opacity:0.4"><span style="font-size:9px;font-weight:900;background:#333;border-radius:2px;padding:1px 3px;color:#aaa;flex-shrink:0">?</span><span style="font-size:10px;color:#777;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">TBD</span></div>`;
+    const res = actual[gameKey];
+    let bg = '#1e1e1e', border = '#3a3a3a', color = '#ddd', icon = '';
+    if (isPicked) { bg = '#252525'; border = '#555'; }
+    if (isPicked && res) {
+      if (team.name === res)  { bg = '#14532d'; border = '#22c55e'; color = '#86efac'; icon = ' ✓'; }
+      else                    { bg = '#3b0707'; border = '#D22027'; color = '#fca5a5'; icon = ' ✗'; }
+    }
+    return `<div style="display:flex;align-items:center;gap:3px;padding:2px 5px;border-radius:4px;border:1px solid ${border};background:${bg};min-height:22px;overflow:hidden">
+      <span style="font-size:9px;font-weight:900;background:#333;border-radius:2px;padding:1px 3px;color:#bbb;flex-shrink:0;line-height:1.2">${team.seed}</span>
+      <span style="font-size:10px;color:${color};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1">${team.name}</span>
+      ${icon ? `<span style="font-size:10px;flex-shrink:0;color:${color}">${icon}</span>` : ''}
+    </div>`;
+  }
+
+  // Render one game slot (two teams + connector line)
+  function gameSlot(region, round, game, rtl) {
+    const h    = SLOT_H * Math.pow(2, round);
+    const key  = `${region}-r${round}-g${game}`;
+    const pick = picks[key];
+    const pickedSlot = pick ? pick.slot : -1;
+    const [tA, tB] = getParticipants(region, round, game);
+    const borderSide = rtl ? 'border-left' : 'border-right';
+    return `<div style="height:${h}px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:1px 3px;">
+      <div style="width:${COL_W-8}px;position:relative;">
+        ${teamRow(tA, pickedSlot === 0, key)}
+        <div style="height:3px;background:#2a2a2a;margin:2px 4px;border-radius:2px"></div>
+        ${teamRow(tB, pickedSlot === 1, key)}
+        <div style="position:absolute;top:50%;right:${rtl?'auto':'-3px'};left:${rtl?'-3px':'auto'};width:3px;height:3px;background:#444;border-radius:50%;transform:translateY(-50%)"></div>
+      </div>
+    </div>`;
+  }
+
+  // Render all rounds for a region as columns
+  function regionCols(region, rtl) {
+    const roundOrder = rtl ? [3,2,1,0] : [0,1,2,3];
+    const rlbls = { 0:'R64', 1:'R32', 2:'S16', 3:'E8' };
+    const regionH = SLOT_H * 8;
+    let out = `<div style="display:flex;flex-direction:column;">`;
+    // Region label
+    out += `<div style="font-size:9px;font-weight:900;color:#D22027;letter-spacing:2px;text-align:center;padding:2px 0 4px;text-transform:uppercase">${region}</div>`;
+    // Round labels row
+    out += `<div style="display:flex;flex-direction:${rtl?'row-reverse':'row'};margin-bottom:4px;">`;
+    for (const r of roundOrder) out += `<div style="width:${COL_W}px;font-size:8px;font-weight:700;color:#666;text-align:center;letter-spacing:1px">${rlbls[r]}</div>`;
+    out += `</div>`;
+    // Round columns
+    out += `<div style="display:flex;flex-direction:${rtl?'row-reverse':'row'};height:${regionH}px;">`;
+    for (const r of roundOrder) {
+      const numGames = 8 / Math.pow(2, r);
+      out += `<div style="display:flex;flex-direction:column;width:${COL_W}px;">`;
+      for (let g = 0; g < numGames; g++) out += gameSlot(region, r, g, rtl);
+      out += `</div>`;
+    }
+    out += `</div></div>`;
+    return out;
+  }
+
+  // Final Four game slot
+  function ffSlot(gameIdx) {
+    const key  = `ff-r4-g${gameIdx}`;
+    const pick = picks[key];
+    const pickedSlot = pick ? pick.slot : -1;
+    const [tA, tB] = getFFParticipants(gameIdx);
+    return `<div style="width:${COL_W+20}px;">
+      <div style="font-size:8px;font-weight:900;color:#D22027;letter-spacing:1.5px;text-align:center;margin-bottom:4px">FINAL FOUR</div>
+      ${teamRow(tA, pickedSlot === 0, key)}
+      <div style="height:3px;background:#2a2a2a;margin:2px 6px;border-radius:2px"></div>
+      ${teamRow(tB, pickedSlot === 1, key)}
+    </div>`;
+  }
+
+  // Champion slot
+  function champSlot() {
+    const cp = picks['champion'];
     const cr = actual['champion'];
-    let cls='',icon='';
-    if(cr){ if(cp.name===cr){cls='correct-pick';icon='✓';}else{cls='wrong-pick';icon='✗';} }
-    html += `<div style="font-size:9px;color:goldenrod;font-weight:900;letter-spacing:1px;margin-top:8px;margin-bottom:3px">🏆 CHAMPION PICK</div>`;
-    html += `<div class="team-btn ${cls}" style="cursor:default;border-color:goldenrod;"><span class="seed-badge">${cp.seed}</span><span class="team-name">${cp.name}</span>${icon?`<span class="result-icon">${icon}</span>`:''}</div>`;
+    if (!cp) return `<div style="width:${COL_W+20}px;text-align:center;padding:8px 0"><div style="font-size:9px;font-weight:900;color:goldenrod;letter-spacing:1px;margin-bottom:6px">🏆 CHAMPION</div>${teamRow(null, false, 'champion')}</div>`;
+    let isPicked = true;
+    let bg = '#252525', border = '#888', color = '#ddd', icon = '';
+    if (cr) {
+      if (cp.name === cr) { bg='#14532d'; border='#22c55e'; color='#86efac'; icon='✓'; }
+      else                { bg='#3b0707'; border='#D22027'; color='#fca5a5'; icon='✗'; }
+    }
+    return `<div style="width:${COL_W+20}px;text-align:center;padding:8px 0">
+      <div style="font-size:9px;font-weight:900;color:goldenrod;letter-spacing:1px;margin-bottom:6px">🏆 CHAMPION</div>
+      <div style="display:flex;align-items:center;gap:3px;padding:4px 6px;border-radius:6px;border:2px solid ${border};background:${bg};justify-content:center">
+        <span style="font-size:10px;font-weight:900;background:#333;border-radius:3px;padding:1px 4px;color:#bbb;flex-shrink:0">${cp.seed}</span>
+        <span style="font-size:11px;font-weight:700;color:${color}">${cp.name}</span>
+        ${icon ? `<span style="font-size:11px;color:${color}">${icon}</span>` : ''}
+      </div>
+    </div>`;
   }
-  html += '</div>';
-  html += '</div>';
-  return html;
+
+  const regionH = SLOT_H * 8;
+  const totalH  = regionH * 2 + 24; // two regions + label gap
+
+  return `<div style="display:flex;gap:0;overflow-x:auto;min-width:900px;padding-bottom:8px;align-items:flex-start;">
+    <!-- Left half: East + South -->
+    <div style="display:flex;flex-direction:column;gap:0;">
+      ${regionCols('East', false)}
+      ${regionCols('South', false)}
+    </div>
+
+    <!-- Center: FF + Champion -->
+    <div style="display:flex;flex-direction:column;justify-content:space-around;align-items:center;height:${totalH + 30}px;padding:40px 8px 0;gap:12px;flex-shrink:0;">
+      ${ffSlot(0)}
+      ${champSlot()}
+      ${ffSlot(1)}
+    </div>
+
+    <!-- Right half: West + Midwest (mirrored) -->
+    <div style="display:flex;flex-direction:column;gap:0;">
+      ${regionCols('West', true)}
+      ${regionCols('Midwest', true)}
+    </div>
+  </div>`;
 }
 
 // ════════════════════════════════════════════════════════
