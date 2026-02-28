@@ -1515,7 +1515,7 @@ function buildResultBracketHTML(entry) {
     if (!team) return `<div style="display:flex;align-items:center;gap:3px;padding:2px 4px;border-radius:4px;border:1px solid #333;background:#1a1a1a;min-height:22px;opacity:0.4"><span style="font-size:9px;font-weight:900;background:#333;border-radius:2px;padding:1px 3px;color:#aaa;flex-shrink:0">?</span><span style="font-size:10px;color:#777;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">TBD</span></div>`;
     const res = actual[gameKey];
     let bg = '#1e1e1e', border = '#3a3a3a', color = '#ddd', icon = '';
-    if (isPicked) { bg = '#252525'; border = '#555'; }
+    if (isPicked) { bg = '#1a2a3a'; border = '#4a9edd'; color = '#a8d8f0'; }
     if (isPicked && res) {
       if (team.name === res)  { bg = '#14532d'; border = '#22c55e'; color = '#86efac'; icon = ' ✓'; }
       else                    { bg = '#3b0707'; border = '#D22027'; color = '#fca5a5'; icon = ' ✗'; }
