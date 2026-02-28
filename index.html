@@ -684,21 +684,13 @@
     </div>
   </div>
 
-<div class="pot-tracker" id="pot-tracker" style="display:flex; flex-direction:column; align-items:center; gap:12px;">
-  <!-- Row 1: Entries + Total Pot -->
-  <div style="display:flex; justify-content:center; gap:16px;">
+  <div class="pot-tracker" id="pot-tracker">
     <div class="pot-card"><small>Entries</small><span id="pot-entries">0</span></div>
     <div class="pot-card"><small>Total Pot</small><span id="pot-total">$0</span></div>
-  </div>
-  <!-- Row 2: 4 prize breakdowns -->
-  <div style="display:flex; justify-content:center; gap:16px; flex-wrap:nowrap;">
     <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="pot-cheetahs">$0</span></div>
     <div class="pot-card"><small>🥇 1st (25%)</small><span id="pot-1st">$0</span></div>
     <div class="pot-card"><small>🥈 2nd (15%)</small><span id="pot-2nd">$0</span></div>
-    <div class="pot-card"><small>🥉 3rd (10%)</small><span id="pot-3rd">$0</span></div>
   </div>
-</div>
-
 
   <div class="section-title">Your Information</div>
   <div class="form-row">
@@ -835,7 +827,7 @@
 // CONFIG — update SCRIPT_URL to your published Apps Script
 // ════════════════════════════════════════════════════════
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzQnmprn31aGnamN1YWrv8WDOh3bQfnsGUU9EGucngbiL8FrHorScqCEPnl0Ncm5Ql8_w/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec",
   PAYMENT_EMAIL: "cherrybeachcheetahs@gmail.com",
   TEAM_NAME: "Cherry Beach Red Cheetahs"
 };
@@ -1092,16 +1084,14 @@ function clearDownstream(bn, region, round, game) {
   const keysToDelete = [];
   for (const k of Object.keys(bracketState[bn])) {
     if (k === 'champion') { keysToDelete.push(k); continue; }
-    if (k.startsWith('ff')) { keysToDelete.push(k); continue; }
+    // If we're picking within FF, only clear champion + the same FF game, not the other FF game
+    if (region === 'ff') continue;
     const m = k.match(/^(.+)-r(\d+)-g(\d+)$/);
     if (!m) continue;
     const [, kr, kround, kgame] = m;
     if (kr === region && parseInt(kround) > round) keysToDelete.push(k);
-    if (kr !== region && parseInt(kround) >= 0) {
-      // If changing a regional round affects FF, clear FF too
-    }
   }
-  // Also clear ff if we changed a regional elite8
+  // If we changed a regional Elite 8, clear FF + champion (regional picks affect FF seeds)
   if (region !== 'ff' && round >= 3) keysToDelete.push(...Object.keys(bracketState[bn]).filter(k=>k.startsWith('ff')||k==='champion'));
   keysToDelete.forEach(k => delete bracketState[bn][k]);
 }
