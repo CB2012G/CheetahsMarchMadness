@@ -194,16 +194,27 @@
 
   /* ─── POT TRACKER ─── */
   .pot-tracker {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     margin: 24px 0;
     border: 2px solid var(--cb-gray);
     border-radius: 12px;
-    padding: 20px;
+    overflow: hidden;
     background: var(--cb-gray);
   }
-  @media(max-width:600px){ .pot-tracker { grid-template-columns: repeat(2,1fr); } }
+  .pot-row {
+    display: grid;
+    padding: 16px 20px;
+  }
+  .pot-row-1 {
+    grid-template-columns: repeat(2, 1fr);
+    border-bottom: 2px solid #ddd;
+  }
+  .pot-row-2 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media(max-width:600px){ .pot-row-2 { grid-template-columns: repeat(2,1fr); gap: 12px; } }
   .pot-card { text-align: center; }
   .pot-card small { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
   .pot-card span { font-size: 28px; font-weight: 900; color: var(--cb-red); }
@@ -685,11 +696,16 @@
   </div>
 
   <div class="pot-tracker" id="pot-tracker">
-    <div class="pot-card"><small>Entries</small><span id="pot-entries">0</span></div>
-    <div class="pot-card"><small>Total Pot</small><span id="pot-total">$0</span></div>
-    <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="pot-cheetahs">$0</span></div>
-    <div class="pot-card"><small>🥇 1st (25%)</small><span id="pot-1st">$0</span></div>
-    <div class="pot-card"><small>🥈 2nd (15%)</small><span id="pot-2nd">$0</span></div>
+    <div class="pot-row pot-row-1">
+      <div class="pot-card"><small>Entries</small><span id="pot-entries">0</span></div>
+      <div class="pot-card"><small>Total Pot</small><span id="pot-total">$0</span></div>
+    </div>
+    <div class="pot-row pot-row-2">
+      <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="pot-cheetahs">$0</span></div>
+      <div class="pot-card"><small>🥇 1st (25%)</small><span id="pot-1st">$0</span></div>
+      <div class="pot-card"><small>🥈 2nd (15%)</small><span id="pot-2nd">$0</span></div>
+      <div class="pot-card"><small>🥉 3rd (10%)</small><span id="pot-3rd">$0</span></div>
+    </div>
   </div>
 
   <div class="section-title">Your Information</div>
@@ -767,11 +783,16 @@
   <div class="sync-time" id="lb-sync-time">Last updated: —</div>
 
   <div class="pot-tracker" id="lb-pot-tracker">
-    <div class="pot-card"><small>Entries</small><span id="lb-entries">—</span></div>
-    <div class="pot-card"><small>Total Pot</small><span id="lb-total">—</span></div>
-    <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="lb-cheetahs">—</span></div>
-    <div class="pot-card"><small>🥇 1st (25%)</small><span id="lb-1st">—</span></div>
-    <div class="pot-card"><small>🥈 2nd (15%)</small><span id="lb-2nd">—</span></div>
+    <div class="pot-row pot-row-1">
+      <div class="pot-card"><small>Entries</small><span id="lb-entries">—</span></div>
+      <div class="pot-card"><small>Total Pot</small><span id="lb-total">—</span></div>
+    </div>
+    <div class="pot-row pot-row-2">
+      <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="lb-cheetahs">—</span></div>
+      <div class="pot-card"><small>🥇 1st (25%)</small><span id="lb-1st">—</span></div>
+      <div class="pot-card"><small>🥈 2nd (15%)</small><span id="lb-2nd">—</span></div>
+      <div class="pot-card"><small>🥉 3rd (10%)</small><span id="lb-3rd">—</span></div>
+    </div>
   </div>
 
   <div style="overflow-x:auto;border-radius:8px;border:2px solid var(--cb-gray)">
@@ -1357,6 +1378,7 @@ function updatePotDisplay() {
   document.getElementById('pot-cheetahs').textContent = `$${prizes[0]}`;
   document.getElementById('pot-1st').textContent = `$${prizes[1]}`;
   document.getElementById('pot-2nd').textContent = `$${prizes[2]}`;
+  document.getElementById('pot-3rd').textContent = `$${prizes[3]}`;
 
   // Leaderboard tab
   document.getElementById('lb-entries').textContent = entries;
@@ -1364,6 +1386,7 @@ function updatePotDisplay() {
   document.getElementById('lb-cheetahs').textContent = `$${prizes[0]}`;
   document.getElementById('lb-1st').textContent = `$${prizes[1]}`;
   document.getElementById('lb-2nd').textContent = `$${prizes[2]}`;
+  document.getElementById('lb-3rd').textContent = `$${prizes[3]}`;
 }
 
 // ════════════════════════════════════════════════════════
