@@ -1524,7 +1524,7 @@ function buildResultBracketHTML(entry) {
 
   // Render all rounds for a region as columns
   function regionCols(region, rtl) {
-    const roundOrder = rtl ? [3,2,1,0] : [0,1,2,3];
+    const roundOrder = [0,1,2,3];
     const rlbls = { 0:'R64', 1:'R32', 2:'S16', 3:'E8' };
     const regionH = SLOT_H * 8;
     let out = `<div style="display:flex;flex-direction:column;">`;
