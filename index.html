@@ -212,7 +212,7 @@
     border-bottom: 2px solid #ddd;
   }
   .pot-row-2 {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
   @media(max-width:600px){ .pot-row-2 { grid-template-columns: repeat(2,1fr); gap: 12px; } }
   .pot-card { text-align: center; }
@@ -663,16 +663,15 @@
   <div class="info-grid">
     <div class="info-card">
       <h4>💰 Entry Fee</h4>
-      <p>1 Bracket: <strong>$40</strong><br>2 Brackets: <strong>$60</strong> (save $20!)<br>
+      <p>1 Bracket: <strong>$20</strong><br>2 Brackets: <strong>$30</strong> (save $10!)<br>
       E-transfer to:
       <span class="etransfer-highlight" id="tpl-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e083888592929982858183888388858594818893a0878d81898cce838f8d">[email&#160;protected]</a></span></p>
     </div>
     <div class="info-card">
       <h4>🏆 Prize Split</h4>
       <p><b>50%</b> → Cheetahs Development<br>
-      <b>25%</b> → 1st Place<br>
-      <b>15%</b> → 2nd Place<br>
-      <b>10%</b> → 3rd Place</p>
+      <b>35%</b> → 1st Place<br>
+      <b>15%</b> → 2nd Place</p>
     </div>
   </div>
 
@@ -696,9 +695,9 @@
     </div>
     <div class="pot-row pot-row-2">
       <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="pot-cheetahs">$0</span></div>
-      <div class="pot-card"><small>🥇 1st (25%)</small><span id="pot-1st">$0</span></div>
+      <div class="pot-card"><small>🥇 1st (35%)</small><span id="pot-1st">$0</span></div>
       <div class="pot-card"><small>🥈 2nd (15%)</small><span id="pot-2nd">$0</span></div>
-      <div class="pot-card"><small>🥉 3rd (10%)</small><span id="pot-3rd">$0</span></div>
+      <div class="pot-card"></div>
     </div>
   </div>
 
@@ -721,13 +720,13 @@
   <div class="section-title" style="margin-top:8px">Select Entry Type</div>
   <div class="price-options">
     <div class="price-opt selected" id="price-1" onclick="selectPrice(1)">
-      <div class="price-tag">$40</div>
+      <div class="price-tag">$20</div>
       <div class="price-desc">1 Bracket Entry</div>
     </div>
     <div class="price-opt" id="price-2" onclick="selectPrice(2)">
-      <div class="price-tag">$60</div>
+      <div class="price-tag">$30</div>
       <div class="price-desc">2 Bracket Entries</div>
-      <div class="price-save">💰 Save $20!</div>
+      <div class="price-save">💰 Save $10!</div>
     </div>
   </div>
 
@@ -783,9 +782,9 @@
     </div>
     <div class="pot-row pot-row-2">
       <div class="pot-card"><small>→ Cheetahs (50%)</small><span id="lb-cheetahs">—</span></div>
-      <div class="pot-card"><small>🥇 1st (25%)</small><span id="lb-1st">—</span></div>
+      <div class="pot-card"><small>🥇 1st (35%)</small><span id="lb-1st">—</span></div>
       <div class="pot-card"><small>🥈 2nd (15%)</small><span id="lb-2nd">—</span></div>
-      <div class="pot-card"><small>🥉 3rd (10%)</small><span id="lb-3rd">—</span></div>
+      <div class="pot-card"></div>
     </div>
   </div>
 
@@ -1351,7 +1350,7 @@ function calcPot() {
   }
   let pot = 0;
   for (const [, cnt] of Object.entries(packages)) {
-    pot += cnt === 1 ? 40 : 60;
+    pot += cnt === 1 ? 20 : 30;
   }
   return pot;
 }
@@ -1361,9 +1360,8 @@ function updatePotDisplay() {
   const entries = submissionsCache.length;
   const prizes = [
     Math.round(pot * 0.50),
-    Math.round(pot * 0.25),
-    Math.round(pot * 0.15),
-    Math.round(pot * 0.10)
+    Math.round(pot * 0.35),
+    Math.round(pot * 0.15)
   ];
 
   // Enter tab
@@ -1372,7 +1370,6 @@ function updatePotDisplay() {
   document.getElementById('pot-cheetahs').textContent = `$${prizes[0]}`;
   document.getElementById('pot-1st').textContent = `$${prizes[1]}`;
   document.getElementById('pot-2nd').textContent = `$${prizes[2]}`;
-  document.getElementById('pot-3rd').textContent = `$${prizes[3]}`;
 
   // Leaderboard tab
   document.getElementById('lb-entries').textContent = entries;
@@ -1380,7 +1377,6 @@ function updatePotDisplay() {
   document.getElementById('lb-cheetahs').textContent = `$${prizes[0]}`;
   document.getElementById('lb-1st').textContent = `$${prizes[1]}`;
   document.getElementById('lb-2nd').textContent = `$${prizes[2]}`;
-  document.getElementById('lb-3rd').textContent = `$${prizes[3]}`;
 }
 
 // ════════════════════════════════════════════════════════
